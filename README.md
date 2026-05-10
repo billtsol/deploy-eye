@@ -1,85 +1,41 @@
-# Deploy Eye 👁️
+# Deploy Eye
 
-A unified dashboard to monitor your Railway and Vercel deployments in one place.
+Mobile-first dashboard for the latest production deployments across Railway and Vercel.
 
 ## Features
 
-- ✅ View Railway and Vercel deployments side-by-side
-- ✅ Real-time status indicators (success, building, failed)
-- ✅ Deployment timestamps and relative time
-- ✅ Click Vercel deployments to open in browser
-- ✅ Clean, dark mode UI
+- Multiple `RAILWAY_TOKEN` and `VERCEL_TOKEN` values in one env var.
+- Separate sections per provider account/token.
+- Only the latest production deployment per project/service is shown.
+- Generated URL and custom domains are displayed when available.
+- Deployment detail page with simple health facts and Railway CPU/memory samples.
+- Dark and light theme toggle.
 
-## Setup
+## Token setup
 
-### 1. Install Dependencies
+Create `.env.local` or `.env`:
+
+```bash
+RAILWAY_TOKEN=railway_token_1,railway_token_2
+VERCEL_TOKEN=vercel_token_1,vercel_token_2
+```
+
+You can separate tokens with commas, semicolons, spaces, or new lines.
+
+Railway project tokens are also supported through the Railway `Project-Access-Token` header fallback.
+
+## Run
 
 ```bash
 npm install
-```
-
-### 2. Configure API Tokens
-
-Create a `.env.local` file:
-
-```bash
-cp .env.local.example .env.local
-```
-
-Add your API tokens:
-
-**Railway Token:**
-1. Go to https://railway.app/account/tokens
-2. Click "Create Token"
-3. Copy and paste into `.env.local`
-
-**Vercel Token:**
-1. Go to https://vercel.com/account/tokens
-2. Click "Create Token"
-3. Select "Full Account" scope
-4. Copy and paste into `.env.local`
-
-Your `.env.local` should look like:
-```
-RAILWAY_TOKEN=your_railway_token
-VERCEL_TOKEN=your_vercel_token
-```
-
-### 3. Run Development Server
-
-```bash
 npm run dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) to see your dashboard.
+Open `http://localhost:3000`.
 
-## Deploy to Vercel
-
-The easiest way to deploy:
+## Build
 
 ```bash
-# Install Vercel CLI
-npm i -g vercel
-
-# Deploy
-vercel
+npm run lint
+npm run build
 ```
-
-Don't forget to add your environment variables in Vercel dashboard:
-- Settings → Environment Variables
-- Add `RAILWAY_TOKEN` and `VERCEL_TOKEN`
-
-## How It Works
-
-- **Server Components**: Fetches deployment data server-side (no CORS issues)
-- **Railway GraphQL API**: Queries projects, services, and deployments
-- **Vercel REST API**: Gets latest deployments
-- **Auto-refresh**: Reload page to see latest deployments
-
-## Tech Stack
-
-- Next.js 15 (App Router)
-- TypeScript
-- Tailwind CSS
-- Railway GraphQL API
-- Vercel REST API
