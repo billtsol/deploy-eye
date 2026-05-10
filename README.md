@@ -4,7 +4,7 @@ Mobile-first dashboard for the latest production deployments across Railway and 
 
 ## Features
 
-- Multiple `RAILWAY_TOKEN` and `VERCEL_TOKEN` values in one env var.
+- Multiple `DEPLOY_EYE_TOKEN_RAILWAY` and `DEPLOY_EYE_TOKEN_VERCEL` values in one env var.
 - Separate sections per provider account/token.
 - Only the latest production deployment per project/service is shown.
 - Generated URL and custom domains are displayed when available.
@@ -16,8 +16,8 @@ Mobile-first dashboard for the latest production deployments across Railway and 
 Create `.env.local` or `.env`:
 
 ```bash
-RAILWAY_TOKEN=railway_token_1,railway_token_2
-VERCEL_TOKEN=vercel_token_1,vercel_token_2
+DEPLOY_EYE_TOKEN_RAILWAY=DEPLOY_EYE_TOKEN_RAILWAY_1,DEPLOY_EYE_TOKEN_RAILWAY_2
+DEPLOY_EYE_TOKEN_VERCEL=DEPLOY_EYE_TOKEN_VERCEL_1,DEPLOY_EYE_TOKEN_VERCEL_2
 ```
 
 You can separate tokens with commas, semicolons, spaces, or new lines.

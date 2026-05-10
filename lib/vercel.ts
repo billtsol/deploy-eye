@@ -1,6 +1,10 @@
 import { accountId, readTokenList, tokenLabel } from "./env";
 import { durationBetween, withHttps } from "./format";
-import type { AccountGroup, DeploymentDetail, DeploymentSummary } from "./types";
+import type {
+  AccountGroup,
+  DeploymentDetail,
+  DeploymentSummary,
+} from "./types";
 
 const VERCEL_API = "https://api.vercel.com";
 
@@ -56,7 +60,7 @@ interface VercelAliasesResponse {
 }
 
 export async function getVercelAccounts(): Promise<AccountGroup[]> {
-  const tokens = readTokenList("VERCEL_TOKEN");
+  const tokens = readTokenList("DEPLOY_EYE_TOKEN_VERCEL");
 
   if (tokens.length === 0) {
     return [
@@ -65,18 +69,23 @@ export async function getVercelAccounts(): Promise<AccountGroup[]> {
         platform: "vercel",
         tokenIndex: 0,
         label: "Vercel",
-        tokenLabel: "VERCEL_TOKEN",
+        tokenLabel: "DEPLOY_EYE_TOKEN_VERCEL",
         deployments: [],
-        error: "VERCEL_TOKEN is not configured.",
+        error: "DEPLOY_EYE_TOKEN_VERCEL is not configured.",
       },
     ];
   }
 
-  return Promise.all(tokens.map((token, index) => getVercelAccount(token, index)));
+  return Promise.all(
+    tokens.map((token, index) => getVercelAccount(token, index)),
+  );
 }
 
-export async function getVercelDeploymentDetail(tokenIndex: number, deploymentId: string): Promise<DeploymentDetail | null> {
-  const token = readTokenList("VERCEL_TOKEN")[tokenIndex];
+export async function getVercelDeploymentDetail(
+  tokenIndex: number,
+  deploymentId: string,
+): Promise<DeploymentDetail | null> {
+  const token = readTokenList("DEPLOY_EYE_TOKEN_VERCEL")[tokenIndex];
 
   if (!token) {
     return null;
@@ -84,7 +93,10 @@ export async function getVercelDeploymentDetail(tokenIndex: number, deploymentId
 
   const [user, deployment, aliases] = await Promise.all([
     getVercelUser(token),
-    vercelFetch<VercelDeploymentApi>(token, `/v13/deployments/${encodeURIComponent(deploymentId)}`),
+    vercelFetch<VercelDeploymentApi>(
+      token,
+      `/v13/deployments/${encodeURIComponent(deploymentId)}`,
+    ),
     getDeploymentAliases(token, deploymentId),
   ]);
 
@@ -92,7 +104,11 @@ export async function getVercelDeploymentDetail(tokenIndex: number, deploymentId
     return null;
   }
 
-  const accountLabel = user?.user?.name || user?.user?.username || user?.user?.email || `Vercel ${tokenIndex + 1}`;
+  const accountLabel =
+    user?.user?.name ||
+    user?.user?.username ||
+    user?.user?.email ||
+    `Vercel ${tokenIndex + 1}`;
   const summary = mapDeployment(deployment, aliases, tokenIndex, accountLabel);
   const buildTime = durationBetween(summary.buildStartedAt, summary.readyAt);
 
@@ -103,14 +119,22 @@ export async function getVercelDeploymentDetail(tokenIndex: number, deploymentId
       { label: "Project", value: summary.projectName },
       { label: "Environment", value: summary.environment },
       { label: "Build time", value: buildTime ?? "Not available" },
-      { label: "Aliases", value: String(summary.generatedDomains.length + summary.customDomains.length) },
+      {
+        label: "Aliases",
+        value: String(
+          summary.generatedDomains.length + summary.customDomains.length,
+        ),
+      },
       { label: "Checks", value: summary.checksConclusion ?? "Not available" },
       { label: "Ready state", value: summary.readySubstate ?? summary.status },
     ],
   };
 }
 
-async function getVercelAccount(token: string, index: number): Promise<AccountGroup> {
+async function getVercelAccount(
+  token: string,
+  index: number,
+): Promise<AccountGroup> {
   const label = tokenLabel(token, index);
 
   try {
@@ -119,19 +143,41 @@ async function getVercelAccount(token: string, index: number): Promise<AccountGr
       getLatestDeploymentsByProject(token),
     ]);
 
-    const accountLabel = user?.user?.name || user?.user?.username || user?.user?.email || `Vercel ${index + 1}`;
-    const accountSubtitle = user?.user?.email && user.user.email !== accountLabel ? user.user.email : undefined;
+    const accountLabel =
+      user?.user?.name ||
+      user?.user?.username ||
+      user?.user?.email ||
+      `Vercel ${index + 1}`;
+    const accountSubtitle =
+      user?.user?.email && user.user.email !== accountLabel
+        ? user.user.email
+        : undefined;
     const aliasesByDeployment = await Promise.all(
       latestDeployments.map(async (deployment) => ({
         id: deployment.uid || deployment.id || "",
-        aliases: await getDeploymentAliases(token, deployment.uid || deployment.id || ""),
+        aliases: await getDeploymentAliases(
+          token,
+          deployment.uid || deployment.id || "",
+        ),
       })),
     );
 
-    const aliasMap = new Map(aliasesByDeployment.map(({ id, aliases }) => [id, aliases]));
+    const aliasMap = new Map(
+      aliasesByDeployment.map(({ id, aliases }) => [id, aliases]),
+    );
     const deployments = latestDeployments
-      .map((deployment) => mapDeployment(deployment, aliasMap.get(deployment.uid || deployment.id || "") ?? [], index, accountLabel))
-      .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+      .map((deployment) =>
+        mapDeployment(
+          deployment,
+          aliasMap.get(deployment.uid || deployment.id || "") ?? [],
+          index,
+          accountLabel,
+        ),
+      )
+      .sort(
+        (a, b) =>
+          new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
+      );
 
     return {
       id: accountId("vercel", token, index),
@@ -150,15 +196,25 @@ async function getVercelAccount(token: string, index: number): Promise<AccountGr
       label: `Vercel ${index + 1}`,
       tokenLabel: label,
       deployments: [],
-      error: error instanceof Error ? error.message : "Failed to fetch Vercel deployments.",
+      error:
+        error instanceof Error
+          ? error.message
+          : "Failed to fetch Vercel deployments.",
     };
   }
 }
 
-async function getLatestDeploymentsByProject(token: string): Promise<VercelDeploymentApi[]> {
+async function getLatestDeploymentsByProject(
+  token: string,
+): Promise<VercelDeploymentApi[]> {
   try {
-    const projectsResponse = await vercelFetch<VercelProjectsResponse>(token, "/v10/projects?limit=100");
-    const projects = (projectsResponse.projects ?? []).filter((project) => project.id || project.name);
+    const projectsResponse = await vercelFetch<VercelProjectsResponse>(
+      token,
+      "/v10/projects?limit=100",
+    );
+    const projects = (projectsResponse.projects ?? []).filter(
+      (project) => project.id || project.name,
+    );
 
     if (projects.length === 0) {
       return [];
@@ -177,7 +233,9 @@ async function getLatestDeploymentsByProject(token: string): Promise<VercelDeplo
       if (!response) {
         return null;
       }
-      const deployment = latestProductionDeployments(response.deployments ?? [])[0];
+      const deployment = latestProductionDeployments(
+        response.deployments ?? [],
+      )[0];
 
       if (!deployment) {
         return null;
@@ -185,28 +243,45 @@ async function getLatestDeploymentsByProject(token: string): Promise<VercelDeplo
 
       return {
         ...deployment,
-        ...((deployment.name ?? project.name) ? { name: deployment.name ?? project.name } : {}),
-        ...((deployment.projectId ?? project.id) ? { projectId: deployment.projectId ?? project.id } : {}),
+        ...((deployment.name ?? project.name)
+          ? { name: deployment.name ?? project.name }
+          : {}),
+        ...((deployment.projectId ?? project.id)
+          ? { projectId: deployment.projectId ?? project.id }
+          : {}),
       };
     });
 
-    return deployments.filter((deployment): deployment is VercelDeploymentApi => Boolean(deployment));
+    return deployments.filter((deployment): deployment is VercelDeploymentApi =>
+      Boolean(deployment),
+    );
   } catch {
-    const deploymentsResponse = await vercelFetch<VercelDeploymentsResponse>(token, "/v6/deployments?target=production&limit=100");
+    const deploymentsResponse = await vercelFetch<VercelDeploymentsResponse>(
+      token,
+      "/v6/deployments?target=production&limit=100",
+    );
     return latestProductionDeployments(deploymentsResponse.deployments ?? []);
   }
 }
 
-function latestProductionDeployments(deployments: VercelDeploymentApi[]): VercelDeploymentApi[] {
+function latestProductionDeployments(
+  deployments: VercelDeploymentApi[],
+): VercelDeploymentApi[] {
   const sorted = deployments
-    .filter((deployment) => (deployment.target ?? "production") === "production")
+    .filter(
+      (deployment) => (deployment.target ?? "production") === "production",
+    )
     .filter((deployment) => Boolean(deployment.uid || deployment.id))
     .sort((a, b) => deploymentTime(b) - deploymentTime(a));
 
   const byProject = new Map<string, VercelDeploymentApi>();
 
   for (const deployment of sorted) {
-    const projectKey = deployment.projectId || deployment.name || deployment.uid || deployment.id;
+    const projectKey =
+      deployment.projectId ||
+      deployment.name ||
+      deployment.uid ||
+      deployment.id;
     if (projectKey && !byProject.has(projectKey)) {
       byProject.set(projectKey, deployment);
     }
@@ -228,7 +303,9 @@ function mapDeployment(
     ...(deployment.url ? [deployment.url] : []),
     ...normalizedAliases.filter((alias) => alias.endsWith(".vercel.app")),
   ]);
-  const customDomains = uniqueDomains(normalizedAliases.filter((alias) => !alias.endsWith(".vercel.app")));
+  const customDomains = uniqueDomains(
+    normalizedAliases.filter((alias) => !alias.endsWith(".vercel.app")),
+  );
 
   return {
     id,
@@ -239,7 +316,9 @@ function mapDeployment(
     projectName: deployment.name || "Unknown Vercel project",
     environment: deployment.target || "production",
     status: deployment.state || deployment.readyState || "UNKNOWN",
-    createdAt: timestampToIso(deployment.createdAt ?? deployment.created) ?? new Date().toISOString(),
+    createdAt:
+      timestampToIso(deployment.createdAt ?? deployment.created) ??
+      new Date().toISOString(),
     url,
     generatedDomains,
     customDomains,
@@ -253,7 +332,9 @@ function mapDeployment(
   };
 }
 
-async function getVercelUser(token: string): Promise<VercelUserResponse | null> {
+async function getVercelUser(
+  token: string,
+): Promise<VercelUserResponse | null> {
   try {
     return await vercelFetch<VercelUserResponse>(token, "/v2/user");
   } catch {
@@ -261,14 +342,24 @@ async function getVercelUser(token: string): Promise<VercelUserResponse | null> 
   }
 }
 
-async function getDeploymentAliases(token: string, deploymentId: string): Promise<string[]> {
+async function getDeploymentAliases(
+  token: string,
+  deploymentId: string,
+): Promise<string[]> {
   if (!deploymentId) {
     return [];
   }
 
   try {
-    const response = await vercelFetch<VercelAliasesResponse>(token, `/v2/deployments/${encodeURIComponent(deploymentId)}/aliases`);
-    return uniqueDomains((response?.aliases ?? []).map((alias) => alias.alias).filter((alias): alias is string => Boolean(alias)));
+    const response = await vercelFetch<VercelAliasesResponse>(
+      token,
+      `/v2/deployments/${encodeURIComponent(deploymentId)}/aliases`,
+    );
+    return uniqueDomains(
+      (response?.aliases ?? [])
+        .map((alias) => alias.alias)
+        .filter((alias): alias is string => Boolean(alias)),
+    );
   } catch {
     return [];
   }
@@ -283,7 +374,9 @@ async function vercelFetch<T>(token: string, path: string): Promise<T> {
   });
 
   if (!response.ok) {
-    throw new Error(`Vercel API error: ${response.status} ${response.statusText}`);
+    throw new Error(
+      `Vercel API error: ${response.status} ${response.statusText}`,
+    );
   }
 
   return (await response.json()) as T;
@@ -305,7 +398,11 @@ function uniqueDomains(domains: string[]): string[] {
   return Array.from(new Set(domains.filter(Boolean)));
 }
 
-async function mapLimit<T, R>(items: T[], limit: number, mapper: (item: T) => Promise<R>): Promise<R[]> {
+async function mapLimit<T, R>(
+  items: T[],
+  limit: number,
+  mapper: (item: T) => Promise<R>,
+): Promise<R[]> {
   const results: R[] = [];
   const queue = [...items];
 
@@ -318,6 +415,8 @@ async function mapLimit<T, R>(items: T[], limit: number, mapper: (item: T) => Pr
     }
   }
 
-  await Promise.all(Array.from({ length: Math.min(limit, items.length) }, () => worker()));
+  await Promise.all(
+    Array.from({ length: Math.min(limit, items.length) }, () => worker()),
+  );
   return results;
 }

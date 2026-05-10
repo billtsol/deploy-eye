@@ -1,6 +1,11 @@
 import { accountId, readTokenList, tokenLabel } from "./env";
 import { withHttps } from "./format";
-import type { AccountGroup, DeploymentDetail, DeploymentSummary, MetricSeries } from "./types";
+import type {
+  AccountGroup,
+  DeploymentDetail,
+  DeploymentSummary,
+  MetricSeries,
+} from "./types";
 
 const RAILWAY_API = "https://backboard.railway.com/graphql/v2";
 
@@ -216,7 +221,7 @@ const PROJECT_TOKEN_QUERY = `
 `;
 
 export async function getRailwayAccounts(): Promise<AccountGroup[]> {
-  const tokens = readTokenList("RAILWAY_TOKEN");
+  const tokens = readTokenList("DEPLOY_EYE_TOKEN_RAILWAY");
 
   if (tokens.length === 0) {
     return [
@@ -225,18 +230,23 @@ export async function getRailwayAccounts(): Promise<AccountGroup[]> {
         platform: "railway",
         tokenIndex: 0,
         label: "Railway",
-        tokenLabel: "RAILWAY_TOKEN",
+        tokenLabel: "DEPLOY_EYE_TOKEN_RAILWAY",
         deployments: [],
-        error: "RAILWAY_TOKEN is not configured.",
+        error: "DEPLOY_EYE_TOKEN_RAILWAY is not configured.",
       },
     ];
   }
 
-  return Promise.all(tokens.map((token, index) => getRailwayAccount(token, index)));
+  return Promise.all(
+    tokens.map((token, index) => getRailwayAccount(token, index)),
+  );
 }
 
-export async function getRailwayDeploymentDetail(tokenIndex: number, deploymentId: string): Promise<DeploymentDetail | null> {
-  const token = readTokenList("RAILWAY_TOKEN")[tokenIndex];
+export async function getRailwayDeploymentDetail(
+  tokenIndex: number,
+  deploymentId: string,
+): Promise<DeploymentDetail | null> {
+  const token = readTokenList("DEPLOY_EYE_TOKEN_RAILWAY")[tokenIndex];
 
   if (!token) {
     return null;
@@ -249,7 +259,12 @@ export async function getRailwayDeploymentDetail(tokenIndex: number, deploymentI
   }
 
   const { deployment, serviceInstance, authMode, accountLabel } = loaded;
-  const summary = mapDeployment(deployment, serviceInstance, tokenIndex, accountLabel);
+  const summary = mapDeployment(
+    deployment,
+    serviceInstance,
+    tokenIndex,
+    accountLabel,
+  );
   const metrics = await getDeploymentMetrics(token, authMode, summary);
 
   return {
@@ -259,34 +274,63 @@ export async function getRailwayDeploymentDetail(tokenIndex: number, deploymentI
       { label: "Project", value: summary.projectName },
       { label: "Service", value: summary.serviceName ?? "Not available" },
       { label: "Environment", value: summary.environment },
-      { label: "Generated domains", value: String(summary.generatedDomains.length) },
+      {
+        label: "Generated domains",
+        value: String(summary.generatedDomains.length),
+      },
       { label: "Custom domains", value: String(summary.customDomains.length) },
-      { label: "Latest sample", value: metrics.some((metric) => metric.value !== undefined) ? "Available" : "No recent data" },
+      {
+        label: "Latest sample",
+        value: metrics.some((metric) => metric.value !== undefined)
+          ? "Available"
+          : "No recent data",
+      },
     ],
   };
 }
 
-async function getRailwayAccount(token: string, index: number): Promise<AccountGroup> {
+async function getRailwayAccount(
+  token: string,
+  index: number,
+): Promise<AccountGroup> {
   try {
-    const response = await railwayGraphql<RailwayDashboardResponse>(token, DASHBOARD_QUERY, {}, "bearer");
+    const response = await railwayGraphql<RailwayDashboardResponse>(
+      token,
+      DASHBOARD_QUERY,
+      {},
+      "bearer",
+    );
 
     if (response.errors?.length) {
       return await getRailwayProjectTokenAccount(token, index);
     }
 
     const projects = nodes(response.data?.projects);
-    const deployments = projects.flatMap((project) => projectDeployments(project, index, accountLabelFromProjects(projects)));
-    const workspaceNames = unique(projects.map((project) => project.workspace?.name).filter((name): name is string => Boolean(name)));
-    const label = workspaceNames.length === 1 ? workspaceNames[0] : `Railway ${index + 1}`;
+    const deployments = projects.flatMap((project) =>
+      projectDeployments(project, index, accountLabelFromProjects(projects)),
+    );
+    const workspaceNames = unique(
+      projects
+        .map((project) => project.workspace?.name)
+        .filter((name): name is string => Boolean(name)),
+    );
+    const label =
+      workspaceNames.length === 1 ? workspaceNames[0] : `Railway ${index + 1}`;
 
     return {
       id: accountId("railway", token, index),
       platform: "railway",
       tokenIndex: index,
       label,
-      subtitle: workspaceNames.length > 1 ? `${workspaceNames.length} workspaces` : undefined,
+      subtitle:
+        workspaceNames.length > 1
+          ? `${workspaceNames.length} workspaces`
+          : undefined,
       tokenLabel: tokenLabel(token, index),
-      deployments: deployments.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()),
+      deployments: deployments.sort(
+        (a, b) =>
+          new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
+      ),
     };
   } catch (error) {
     return {
@@ -296,20 +340,38 @@ async function getRailwayAccount(token: string, index: number): Promise<AccountG
       label: `Railway ${index + 1}`,
       tokenLabel: tokenLabel(token, index),
       deployments: [],
-      error: error instanceof Error ? error.message : "Failed to fetch Railway deployments.",
+      error:
+        error instanceof Error
+          ? error.message
+          : "Failed to fetch Railway deployments.",
     };
   }
 }
 
-async function getRailwayProjectTokenAccount(token: string, index: number): Promise<AccountGroup> {
-  const response = await railwayGraphql<RailwayProjectTokenResponse>(token, PROJECT_TOKEN_QUERY, {}, "project");
+async function getRailwayProjectTokenAccount(
+  token: string,
+  index: number,
+): Promise<AccountGroup> {
+  const response = await railwayGraphql<RailwayProjectTokenResponse>(
+    token,
+    PROJECT_TOKEN_QUERY,
+    {},
+    "project",
+  );
 
   const projectToken = response.data?.projectToken;
   const tokenProject = projectToken?.project;
   const tokenEnvironment = projectToken?.environment;
 
-  if (response.errors?.length || !projectToken || !tokenProject || !tokenEnvironment) {
-    throw new Error(response.errors?.[0]?.message ?? "Railway token is not authorized.");
+  if (
+    response.errors?.length ||
+    !projectToken ||
+    !tokenProject ||
+    !tokenEnvironment
+  ) {
+    throw new Error(
+      response.errors?.[0]?.message ?? "Railway token is not authorized.",
+    );
   }
 
   const project: RailwayProject = {
@@ -325,14 +387,17 @@ async function getRailwayProjectTokenAccount(token: string, index: number): Prom
       ],
     },
   };
-  const accountLabel = project.workspace?.name || project.name || `Railway ${index + 1}`;
+  const accountLabel =
+    project.workspace?.name || project.name || `Railway ${index + 1}`;
 
   return {
     id: accountId("railway", token, index),
     platform: "railway",
     tokenIndex: index,
     label: accountLabel,
-    subtitle: projectToken.name ? `Project token · ${projectToken.name}` : "Project token",
+    subtitle: projectToken.name
+      ? `Project token · ${projectToken.name}`
+      : "Project token",
     tokenLabel: tokenLabel(token, index),
     deployments: projectDeployments(project, index, accountLabel),
   };
@@ -385,11 +450,18 @@ async function fetchDeploymentWithMode(
     return null;
   }
 
-  const serviceInstance = deployment.serviceId && deployment.environmentId
-    ? await getServiceInstance(token, authMode, deployment.serviceId, deployment.environmentId)
-    : undefined;
+  const serviceInstance =
+    deployment.serviceId && deployment.environmentId
+      ? await getServiceInstance(
+          token,
+          authMode,
+          deployment.serviceId,
+          deployment.environmentId,
+        )
+      : undefined;
 
-  const accountLabel = deployment.service?.project?.name || deployment.service?.name || "Railway";
+  const accountLabel =
+    deployment.service?.project?.name || deployment.service?.name || "Railway";
 
   return {
     deployment,
@@ -426,7 +498,11 @@ async function getDeploymentMetrics(
   authMode: RailwayAuthMode,
   deployment: DeploymentSummary,
 ): Promise<MetricSeries[]> {
-  if (!deployment.projectId || !deployment.serviceId || !deployment.environmentId) {
+  if (
+    !deployment.projectId ||
+    !deployment.serviceId ||
+    !deployment.environmentId
+  ) {
     return emptyMetrics();
   }
 
@@ -476,19 +552,38 @@ async function getDeploymentMetrics(
   return [cpu, memory];
 }
 
-function projectDeployments(project: RailwayProject, tokenIndex: number, accountLabel: string): DeploymentSummary[] {
+function projectDeployments(
+  project: RailwayProject,
+  tokenIndex: number,
+  accountLabel: string,
+): DeploymentSummary[] {
   const environments = nodes(project.environments);
-  const productionEnvironments = environments.filter((environment) => isProductionEnvironment(environment, project));
+  const productionEnvironments = environments.filter((environment) =>
+    isProductionEnvironment(environment, project),
+  );
 
   return productionEnvironments.flatMap((environment) =>
     nodes(environment.serviceInstances).flatMap((serviceInstance) => {
       const deployment = latestDeploymentForService(serviceInstance);
-      return deployment ? [mapDeployment(deployment, serviceInstance, tokenIndex, accountLabel, project, environment)] : [];
+      return deployment
+        ? [
+            mapDeployment(
+              deployment,
+              serviceInstance,
+              tokenIndex,
+              accountLabel,
+              project,
+              environment,
+            ),
+          ]
+        : [];
     }),
   );
 }
 
-function latestDeploymentForService(serviceInstance: RailwayServiceInstance): RailwayDeploymentApi | undefined {
+function latestDeploymentForService(
+  serviceInstance: RailwayServiceInstance,
+): RailwayDeploymentApi | undefined {
   const active = [...(serviceInstance.activeDeployments ?? [])].sort(
     (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
   );
@@ -508,11 +603,15 @@ function mapDeployment(
     [
       deployment.url ?? undefined,
       deployment.staticUrl ?? undefined,
-      ...(serviceInstance?.domains?.serviceDomains ?? []).map((domain) => domain.domain),
+      ...(serviceInstance?.domains?.serviceDomains ?? []).map(
+        (domain) => domain.domain,
+      ),
     ].filter((domain): domain is string => Boolean(domain)),
   );
   const customDomains = unique(
-    (serviceInstance?.domains?.customDomains ?? []).map((domain) => domain.domain).filter((domain): domain is string => Boolean(domain)),
+    (serviceInstance?.domains?.customDomains ?? [])
+      .map((domain) => domain.domain)
+      .filter((domain): domain is string => Boolean(domain)),
   );
   const primaryDomain = customDomains[0] ?? generatedDomains[0];
 
@@ -522,11 +621,16 @@ function mapDeployment(
     tokenIndex,
     accountLabel,
     projectId: deployment.projectId ?? project?.id,
-    projectName: deployment.service?.project?.name ?? project?.name ?? "Unknown Railway project",
+    projectName:
+      deployment.service?.project?.name ??
+      project?.name ??
+      "Unknown Railway project",
     serviceId: deployment.serviceId ?? serviceInstance?.serviceId ?? undefined,
     serviceName: deployment.service?.name ?? serviceInstance?.serviceName,
-    environment: deployment.environment?.name ?? environment?.name ?? "production",
-    environmentId: deployment.environmentId ?? environment?.id ?? deployment.environment?.id,
+    environment:
+      deployment.environment?.name ?? environment?.name ?? "production",
+    environmentId:
+      deployment.environmentId ?? environment?.id ?? deployment.environment?.id,
     status: deployment.status,
     createdAt: deployment.createdAt,
     updatedAt: deployment.updatedAt,
@@ -536,13 +640,24 @@ function mapDeployment(
   };
 }
 
-function isProductionEnvironment(environment: RailwayEnvironment, project: RailwayProject): boolean {
+function isProductionEnvironment(
+  environment: RailwayEnvironment,
+  project: RailwayProject,
+): boolean {
   const normalizedName = environment.name.toLowerCase();
-  return normalizedName === "production" || normalizedName === "prod" || environment.id === project.primaryEnvironmentId;
+  return (
+    normalizedName === "production" ||
+    normalizedName === "prod" ||
+    environment.id === project.primaryEnvironmentId
+  );
 }
 
 function accountLabelFromProjects(projects: RailwayProject[]): string {
-  const workspaceNames = unique(projects.map((project) => project.workspace?.name).filter((name): name is string => Boolean(name)));
+  const workspaceNames = unique(
+    projects
+      .map((project) => project.workspace?.name)
+      .filter((name): name is string => Boolean(name)),
+  );
   return workspaceNames[0] ?? "Railway";
 }
 
@@ -556,14 +671,18 @@ async function railwayGraphql<T>(
     method: "POST",
     headers: {
       "Content-Type": "application/json",
-      ...(authMode === "bearer" ? { Authorization: `Bearer ${token}` } : { "Project-Access-Token": token }),
+      ...(authMode === "bearer"
+        ? { Authorization: `Bearer ${token}` }
+        : { "Project-Access-Token": token }),
     },
     body: JSON.stringify({ query, variables }),
     cache: "no-store",
   });
 
   if (!response.ok) {
-    throw new Error(`Railway API error: ${response.status} ${response.statusText}`);
+    throw new Error(
+      `Railway API error: ${response.status} ${response.statusText}`,
+    );
   }
 
   return (await response.json()) as GraphQlResponse<T>;
@@ -598,7 +717,9 @@ function emptyMetrics(): MetricSeries[] {
 }
 
 function nodes<T>(connection?: Connection<T>): T[] {
-  return (connection?.edges ?? []).map((edge) => edge.node).filter((node): node is T => Boolean(node));
+  return (connection?.edges ?? [])
+    .map((edge) => edge.node)
+    .filter((node): node is T => Boolean(node));
 }
 
 function unique(values: string[]): string[] {
