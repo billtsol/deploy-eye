@@ -10,18 +10,22 @@ interface AccountSectionProps {
 export function AccountSection({ account }: AccountSectionProps) {
   return (
     <section className="space-y-4">
-      <div className="flex flex-col gap-3 border-b border-[var(--border)] pb-4 sm:flex-row sm:items-end sm:justify-between">
+      <div className="flex flex-col gap-3 border-b border-border pb-4 sm:flex-row sm:items-end sm:justify-between">
         <div className="flex items-start gap-3">
           <PlatformMark platform={account.platform} />
           <div>
-            <p className="text-xs font-semibold uppercase tracking-wide text-[var(--muted)]">{account.platform}</p>
-            <h2 className="text-xl font-semibold text-[var(--foreground)]">{account.label}</h2>
-            <p className="mt-1 text-sm text-[var(--muted)]">{account.subtitle ?? account.tokenLabel}</p>
+            <p className="text-xs font-semibold uppercase tracking-wide text-muted">{account.platform}</p>
+            <h2 className="text-xl font-semibold text-foreground" data-private>
+              {account.label}
+            </h2>
+            <p className="mt-1 text-sm text-muted" data-private>
+              {account.subtitle ?? account.tokenLabel}
+            </p>
           </div>
         </div>
-        <div className="flex flex-wrap gap-2 text-xs text-[var(--muted)]">
-          <span className="rounded-full border border-[var(--border)] bg-[var(--surface-muted)] px-2.5 py-1">{account.tokenLabel}</span>
-          <span className="rounded-full border border-[var(--border)] bg-[var(--surface-muted)] px-2.5 py-1">
+        <div className="flex flex-wrap gap-2 text-xs text-muted">
+          <span className="rounded-full border border-border bg-surface-muted px-2.5 py-1">{account.tokenLabel}</span>
+          <span className="rounded-full border border-border bg-surface-muted px-2.5 py-1">
             {account.deployments.length} deploy{account.deployments.length === 1 ? "" : "s"}
           </span>
         </div>
@@ -41,7 +45,7 @@ export function AccountSection({ account }: AccountSectionProps) {
           ))}
         </div>
       ) : !account.error ? (
-        <div className="rounded-lg border border-dashed border-[var(--border)] p-6 text-sm text-[var(--muted)]">
+        <div className="rounded-lg border border-dashed border-border p-6 text-sm text-muted">
           No latest production deployments found for this token.
         </div>
       ) : null}

@@ -18,12 +18,12 @@ export function DashboardOverview({ data }: DashboardOverviewProps) {
       {cards.map((card) => {
         const Icon = card.icon;
         return (
-          <div key={card.label} className="rounded-lg border border-[var(--border)] bg-[var(--surface)] p-4 shadow-sm">
+          <div key={card.label} className="rounded-lg border border-border bg-surface p-4 shadow-sm">
             <div className="flex items-center justify-between gap-3">
-              <p className="text-xs font-medium uppercase tracking-wide text-[var(--muted)]">{card.label}</p>
-              <Icon className="h-4 w-4 text-[var(--muted)]" />
+              <p className="text-xs font-medium uppercase tracking-wide text-muted">{card.label}</p>
+              <Icon className="h-4 w-4 text-muted" />
             </div>
-            <p className="mt-3 text-2xl font-semibold text-[var(--foreground)]">{card.value}</p>
+            <p className="mt-3 text-2xl font-semibold text-foreground">{card.value}</p>
           </div>
         );
       })}

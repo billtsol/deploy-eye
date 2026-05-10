@@ -12,7 +12,7 @@ export function DomainList({ generatedDomains, customDomains, compact = false }:
   const primaryGenerated = generatedDomains[0];
 
   if (!primaryCustom && !primaryGenerated) {
-    return <p className="text-sm text-[var(--muted)]">No public URL detected</p>;
+    return <p className="text-sm text-muted">No public URL detected</p>;
   }
 
   return (
@@ -23,7 +23,7 @@ export function DomainList({ generatedDomains, customDomains, compact = false }:
       {primaryCustom ? (
         <DomainRow label="Custom" domain={primaryCustom} compact={compact} />
       ) : (
-        <p className="flex items-center gap-2 text-sm text-[var(--muted)]">
+        <p className="flex items-center gap-2 text-sm text-muted">
           <Globe2 className="h-4 w-4 shrink-0" />
           No custom domain
         </p>
@@ -39,9 +39,9 @@ function DomainRow({ label, domain, compact = false }: { label: string; domain: 
       href={withHttps(domain)}
       target="_blank"
       rel="noreferrer"
-      className="group flex min-w-0 items-center gap-2 text-sm text-[var(--muted)] transition hover:text-[var(--foreground)]"
+      className="group flex min-w-0 items-center gap-2 text-sm text-muted transition hover:text-foreground"
     >
-      <span className="shrink-0 rounded-md border border-[var(--border)] px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-[var(--muted-strong)]">
+      <span className="shrink-0 rounded-md border border-border px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-muted-strong">
         {label}
       </span>
       <span className={compact ? "truncate" : "break-all"}>{domain}</span>

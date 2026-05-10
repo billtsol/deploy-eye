@@ -19,7 +19,7 @@ export function RefreshButton() {
       type="button"
       onClick={refresh}
       disabled={isRefreshing}
-      className="inline-flex h-10 w-10 items-center justify-center rounded-lg border border-[var(--border)] bg-[var(--surface)] text-[var(--foreground)] shadow-sm transition hover:border-[var(--border-strong)] disabled:opacity-60"
+      className="inline-flex h-10 w-10 cursor-pointer items-center justify-center rounded-lg border border-border bg-surface text-foreground shadow-sm transition hover:border-border-strong disabled:cursor-not-allowed disabled:opacity-60"
       title="Refresh deployments"
       aria-label="Refresh deployments"
     >

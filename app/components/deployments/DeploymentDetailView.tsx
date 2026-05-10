@@ -13,23 +13,30 @@ interface DeploymentDetailViewProps {
 
 export function DeploymentDetailView({ deployment }: DeploymentDetailViewProps) {
   const externalUrl = deployment.url ?? deployment.inspectorUrl;
+  const railwayProjectPrivacy = deployment.platform === "railway"
+    ? { "data-private": true }
+    : {};
 
   return (
     <div className="space-y-6 pb-10">
-      <Link href="/" className="inline-flex items-center gap-2 text-sm font-medium text-[var(--muted)] transition hover:text-[var(--foreground)]">
+      <Link href="/" className="inline-flex items-center gap-2 text-sm font-medium text-muted transition hover:text-foreground">
         <ArrowLeft className="h-4 w-4" />
         Back to dashboard
       </Link>
 
-      <section className="space-y-5 rounded-lg border border-[var(--border)] bg-[var(--surface)] p-5 shadow-sm sm:p-6">
+      <section className="space-y-5 rounded-lg border border-border bg-surface p-5 shadow-sm sm:p-6">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
           <div className="flex min-w-0 gap-3">
             <PlatformMark platform={deployment.platform} />
             <div className="min-w-0">
-              <p className="text-xs font-semibold uppercase tracking-wide text-[var(--muted)]">{deployment.accountLabel}</p>
-              <h2 className="mt-1 break-words text-2xl font-semibold text-[var(--foreground)]">{deployment.projectName}</h2>
-              <p className="mt-2 text-sm text-[var(--muted)]">
-                {deployment.serviceName ?? deployment.platform} · {deployment.environment} · {relativeTime(deployment.createdAt)}
+              <p className="text-xs font-semibold uppercase tracking-wide text-muted" data-private>
+                {deployment.accountLabel}
+              </p>
+              <h2 className="mt-1 wrap-break-word text-2xl font-semibold text-foreground" {...railwayProjectPrivacy}>
+                {deployment.projectName}
+              </h2>
+              <p className="mt-2 text-sm text-muted">
+                {deployment.serviceName ?? deployment.platform} / {deployment.environment} / {relativeTime(deployment.createdAt)}
               </p>
             </div>
           </div>
@@ -40,7 +47,7 @@ export function DeploymentDetailView({ deployment }: DeploymentDetailViewProps) 
                 href={withHttps(externalUrl)}
                 target="_blank"
                 rel="noreferrer"
-                className="inline-flex items-center gap-2 rounded-lg border border-[var(--border)] bg-[var(--surface-muted)] px-3 py-2 text-sm font-medium text-[var(--foreground)] transition hover:border-[var(--border-strong)]"
+                className="inline-flex items-center gap-2 rounded-lg border border-border bg-surface-muted px-3 py-2 text-sm font-medium text-foreground transition hover:border-border-strong"
               >
                 Open
                 <ExternalLink className="h-4 w-4" />
@@ -51,14 +58,19 @@ export function DeploymentDetailView({ deployment }: DeploymentDetailViewProps) 
 
         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
           {deployment.facts.map((fact) => (
-            <div key={fact.label} className="rounded-lg border border-[var(--border)] bg-[var(--surface-muted)] p-3">
-              <p className="text-xs font-medium uppercase tracking-wide text-[var(--muted)]">{fact.label}</p>
-              <p className="mt-1 break-words text-sm font-semibold text-[var(--foreground)]">{fact.value}</p>
+            <div key={fact.label} className="rounded-lg border border-border bg-surface-muted p-3">
+              <p className="text-xs font-medium uppercase tracking-wide text-muted">{fact.label}</p>
+              <p
+                className="mt-1 wrap-break-word text-sm font-semibold text-foreground"
+                {...(deployment.platform === "railway" && fact.label === "Project" ? railwayProjectPrivacy : {})}
+              >
+                {fact.value}
+              </p>
             </div>
           ))}
-          <div className="rounded-lg border border-[var(--border)] bg-[var(--surface-muted)] p-3">
-            <p className="text-xs font-medium uppercase tracking-wide text-[var(--muted)]">Created</p>
-            <p className="mt-1 text-sm font-semibold text-[var(--foreground)]">{absoluteDate(deployment.createdAt)}</p>
+          <div className="rounded-lg border border-border bg-surface-muted p-3">
+            <p className="text-xs font-medium uppercase tracking-wide text-muted">Created</p>
+            <p className="mt-1 text-sm font-semibold text-foreground">{absoluteDate(deployment.createdAt)}</p>
           </div>
         </div>
       </section>
@@ -68,16 +80,16 @@ export function DeploymentDetailView({ deployment }: DeploymentDetailViewProps) 
           <MetricCard key={metric.label} metric={metric} />
         ))}
         {deployment.metrics.length === 0 ? (
-          <div className="rounded-lg border border-[var(--border)] bg-[var(--surface)] p-4 text-sm text-[var(--muted)] shadow-sm">
+          <div className="rounded-lg border border-border bg-surface p-4 text-sm text-muted shadow-sm">
             Runtime CPU and memory are not exposed by this provider endpoint. The summary above shows the useful deployment data available for this deploy.
           </div>
         ) : null}
       </section>
 
-      <section className="rounded-lg border border-[var(--border)] bg-[var(--surface)] p-5 shadow-sm">
+      <section className="rounded-lg border border-border bg-surface p-5 shadow-sm">
         <div className="mb-4">
-          <h3 className="text-base font-semibold text-[var(--foreground)]">URLs</h3>
-          <p className="mt-1 text-sm text-[var(--muted)]">Generated URL and custom domains assigned to this deployment.</p>
+          <h3 className="text-base font-semibold text-foreground">URLs</h3>
+          <p className="mt-1 text-sm text-muted">Generated URL and custom domains assigned to this deployment.</p>
         </div>
         <DomainList generatedDomains={deployment.generatedDomains} customDomains={deployment.customDomains} />
       </section>
