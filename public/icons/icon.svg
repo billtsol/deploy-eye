@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512" role="img" aria-label="Deploy Eye">
+  <rect width="512" height="512" rx="112" fill="#fffdf8" />
+  <rect x="24" y="24" width="464" height="464" rx="96" fill="none" stroke="#d8d1c3" stroke-width="16" />
+  <g
+    transform="translate(80 80) scale(14.666667)"
+    fill="none"
+    stroke="#0f766e"
+    stroke-linecap="round"
+    stroke-linejoin="round"
+    stroke-width="2"
+  >
+    <path d="M2.062 12.348a1 1 0 0 1 0-.696 10.75 10.75 0 0 1 19.876 0 1 1 0 0 1 0 .696 10.75 10.75 0 0 1-19.876 0" />
+    <circle cx="12" cy="12" r="3" />
+  </g>
+</svg>

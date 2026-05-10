@@ -1,0 +1,82 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="theme-color" content="#0f766e" />
+    <title>Deploy Eye Offline</title>
+    <style>
+      :root {
+        color-scheme: light dark;
+        --bg: #f4f2ed;
+        --fg: #1f2220;
+        --surface: #fffdf8;
+        --border: #d8d1c3;
+        --accent: #0f766e;
+      }
+
+      @media (prefers-color-scheme: dark) {
+        :root {
+          --bg: #141513;
+          --fg: #f2f0ea;
+          --surface: #1d1e1b;
+          --border: #383a34;
+          --accent: #2dd4bf;
+        }
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        min-height: 100vh;
+        margin: 0;
+        display: grid;
+        place-items: center;
+        padding: 24px;
+        background: var(--bg);
+        color: var(--fg);
+        font-family:
+          Arial,
+          Helvetica,
+          sans-serif;
+      }
+
+      main {
+        width: min(100%, 420px);
+        border: 1px solid var(--border);
+        border-radius: 8px;
+        background: var(--surface);
+        padding: 24px;
+      }
+
+      h1 {
+        margin: 0 0 8px;
+        font-size: 1.35rem;
+        line-height: 1.2;
+      }
+
+      p {
+        margin: 0;
+        color: color-mix(in srgb, var(--fg) 72%, transparent);
+        line-height: 1.5;
+      }
+
+      a {
+        display: inline-block;
+        margin-top: 18px;
+        color: var(--accent);
+        font-weight: 700;
+        text-decoration: none;
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <h1>Deploy Eye is offline</h1>
+      <p>The app is installed, but live deployment data needs a network connection.</p>
+      <a href="/">Try again</a>
+    </main>
+  </body>
+</html>

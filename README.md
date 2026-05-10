@@ -27,8 +27,8 @@ Railway project tokens are also supported through the Railway `Project-Access-To
 ## Run
 
 ```bash
-npm install
-npm run dev
+bun install
+bun run dev
 ```
 
 Open `http://localhost:3000`.
@@ -36,6 +36,6 @@ Open `http://localhost:3000`.
 ## Build
 
 ```bash
-npm run lint
-npm run build
+bun run lint
+bun run build
 ```
